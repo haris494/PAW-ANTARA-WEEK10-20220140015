@@ -1,135 +1,259 @@
-# CS Bot API — Generative AI + Prompt Engineering + Express/Sequelize
+# PAW Pertemuan 10 — CS Bot API
 
-API-only (tanpa view), demo customer service otomatis berbasis Gemini yang cuma boleh
-jawab soal produk di database, dengan admin login buat kelola produk.
+Project ini merupakan tugas **Pertemuan 10 Pemrograman Aplikasi Web (PAW)** berupa REST API Customer Service otomatis berbasis **Generative AI** menggunakan **Express.js**, **Sequelize**, **MySQL**, dan **Gemini API**.
 
-Materi yang kedemo di project ini:
-1. **Integrasi LLM di server** (Gemini API), API key aman di `.env`
-2. **Prompt engineering & guardrail** — nolak pertanyaan di luar konteks
-3. **Defense in depth** — validasi juga di level kode, bukan cuma di prompt
+Bot dirancang untuk menjawab pertanyaan mengenai produk yang tersedia di database. Pertanyaan di luar konteks produk akan ditolak menggunakan **prompt engineering** dan **guardrail**.
 
-## Struktur folder
-```
-cs-bot-api/
-├── app.js
+## Fitur
+
+* Login dan logout admin menggunakan session
+* CRUD data produk
+* Menampilkan daftar produk
+* Integrasi Gemini API
+* Customer Service Bot berbasis AI
+* Jawaban berdasarkan data produk di database
+* Guardrail untuk menolak pertanyaan di luar konteks
+* Validasi input menggunakan middleware
+* API key disimpan menggunakan `.env`
+* Pengujian endpoint menggunakan Thunder Client
+
+## Teknologi
+
+* Node.js
+* Express.js
+* Sequelize
+* MySQL
+* Laragon
+* Gemini API
+* bcrypt
+* express-session
+* dotenv
+* Thunder Client
+
+## Struktur Folder
+
+```text
+PAW-ANTARA-WEEK10/
 ├── config/
-│   ├── database.js       # koneksi sequelize
-│   └── gemini.js         # setup client Gemini (baca API key dari .env)
+│   ├── database.js
+│   └── gemini.js
+├── controllers/
+│   ├── admin.controller.js
+│   ├── chat.controller.js
+│   └── product.controller.js
+├── middlewares/
+│   ├── auth.middleware.js
+│   └── validateChatInput.middleware.js
 ├── models/
 │   ├── admin.model.js
-│   ├── product.model.js
-│   └── index.js
-├── controllers/
-│   ├── admin.controller.js    # login/logout admin
-│   ├── product.controller.js  # CRUD produk
-│   └── chat.controller.js     # endpoint chat ke bot
-├── services/
-│   └── gemini.service.js      # BAGIAN INTI: system prompt + guardrail + call Gemini
-├── middlewares/
-│   ├── auth.middleware.js         # cek session admin
-│   └── validateChatInput.middleware.js  # validasi input chat
+│   ├── index.js
+│   └── product.model.js
 ├── routes/
 │   ├── admin.routes.js
-│   ├── product.routes.js
-│   └── chat.routes.js
+│   ├── chat.routes.js
+│   └── product.routes.js
 ├── seeders/
-│   └── seed.js            # admin + produk dummy
-└── utils/
-    └── response.js
+│   └── seed.js
+├── services/
+│   └── gemini.service.js
+├── utils/
+│   └── response.js
+├── screenshots/
+├── app.js
+├── Tugas.md
+├── package.json
+└── README.md
 ```
 
-## Cara install & jalanin
+## Persiapan Database
 
-1. Bikin database dulu (Postgres by default):
+Project ini menggunakan **MySQL melalui Laragon**.
+
+Jalankan Laragon dan pastikan MySQL aktif pada port:
+
+```text
+3306
+```
+
+Buat database:
+
 ```sql
 CREATE DATABASE cs_bot_db;
 ```
 
-2. Dapetin Gemini API key gratis di https://aistudio.google.com/app/apikey
+## Konfigurasi Environment
 
-3. Copy `.env.example` jadi `.env`, isi kredensial DB + `GEMINI_API_KEY`.
+Buat file `.env` dan sesuaikan konfigurasi berikut:
 
-4. Install dependency:
+```env
+PORT=3000
+
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=cs_bot_db
+DB_USER=root
+DB_PASS=
+
+SESSION_SECRET=ganti-dengan-secret-yang-random
+
+GEMINI_API_KEY=API_KEY_GEMINI_KAMU
+
+STORE_NAME=Toko Kita
+```
+
+> File `.env` tidak boleh di-commit ke GitHub karena berisi informasi sensitif seperti Gemini API Key.
+
+## Instalasi
+
+Install semua dependency:
+
 ```bash
 npm install
 ```
 
-5. Isi data awal (admin + produk dummy):
+Pastikan driver MySQL tersedia:
+
+```bash
+npm install mysql2
+```
+
+## Menjalankan Seeder
+
+Jalankan:
+
 ```bash
 npm run seed
 ```
 
-6. Jalankan server:
+Jika berhasil, terminal akan menampilkan hasil seperti:
+
+```text
+Koneksi database berhasil
+Admin siap: admin
+Produk dummy berhasil ditambahin
+
+Seeding selesai ✅
+Login admin pake:
+username: admin | password: admin123
+```
+
+Seeder akan membuat akun admin dan data produk awal.
+
+## Menjalankan Server
+
+Jalankan:
+
 ```bash
 npm run dev
 ```
 
-## Endpoint
+Server berjalan pada:
+
+```text
+http://localhost:3000
+```
+
+## Endpoint API
 
 ### Admin
-| Method | Endpoint            | Body                          | Keterangan          |
-|--------|-----------------------|--------------------------------|----------------------|
-| POST   | /api/admin/login       | `{ username, password }`      | Login admin (session) |
-| POST   | /api/admin/logout      | -                               | Logout                |
 
-> Catatan: sengaja **tidak ada endpoint public buat register admin**. Admin dibikin
-> lewat `npm run seed` aja. Ini contoh prinsip keamanan: jangan expose kemampuan
-> bikin akun privileged ke publik.
+| Method | Endpoint            | Auth   | Keterangan   |
+| ------ | ------------------- | ------ | ------------ |
+| POST   | `/api/admin/login`  | Publik | Login admin  |
+| POST   | `/api/admin/logout` | Admin  | Logout admin |
+
+Contoh login:
+
+```json
+{
+  "username": "admin",
+  "password": "admin123"
+}
+```
 
 ### Product
-| Method | Endpoint             | Auth        | Body                                  | Keterangan       |
-|--------|------------------------|-------------|-----------------------------------------|--------------------|
-| GET    | /api/products          | publik      | -                                        | List semua produk |
-| POST   | /api/products          | admin       | `{ name, description, price, stock }`  | Tambah produk      |
-| PUT    | /api/products/:id      | admin       | `{ name?, description?, price?, stock? }` | Update produk   |
-| DELETE | /api/products/:id      | admin       | -                                         | Hapus produk       |
 
-### Chat (CS Bot)
-| Method | Endpoint    | Auth   | Body               | Keterangan              |
-|--------|--------------|--------|----------------------|---------------------------|
-| POST   | /api/chat    | publik | `{ message }`        | Kirim pertanyaan ke bot  |
+| Method | Endpoint            | Auth   | Keterangan               |
+| ------ | ------------------- | ------ | ------------------------ |
+| GET    | `/api/products`     | Publik | Menampilkan semua produk |
+| POST   | `/api/products`     | Admin  | Menambahkan produk       |
+| PUT    | `/api/products/:id` | Admin  | Mengubah produk          |
+| DELETE | `/api/products/:id` | Admin  | Menghapus produk         |
 
-Contoh request:
+Contoh body tambah produk:
+
 ```json
-POST /api/chat
-{ "message": "kaos polos ada warna apa aja dan harganya berapa?" }
+{
+  "name": "Nama Produk",
+  "description": "Deskripsi produk",
+  "price": 100000,
+  "stock": 10
+}
 ```
 
-Contoh kalo user coba keluar konteks:
-```json
+### Chat
+
+Endpoint:
+
+```text
 POST /api/chat
-{ "message": "buatin saya kode HTML buat landing page dong" }
 ```
-Bot bakal nolak dan ngarahin balik ke topik produk — ini yang kejadian karena
-aturan di `services/gemini.service.js` (`buildSystemInstruction`).
 
-## Cara kerja guardrail-nya (penting buat materi)
+Contoh pertanyaan mengenai produk:
 
-Di `services/gemini.service.js`, ada fungsi `buildSystemInstruction()` yang:
-1. Ambil semua data produk dari database (jadi bot selalu jawab data terkini, bukan hardcode)
-2. Nyusun **system instruction** yang isinya:
-   - Peran bot (siapa dia, buat toko apa)
-   - Data produk yang boleh dia rujuk (grounding — bot gak boleh ngarang)
-   - Aturan ketat nolak topik di luar produk, termasuk larangan generate kode/HTML
-   - Instruksi anti-prompt-injection (nolak instruksi yang nyoba ganti peran bot)
+```json
+{
+  "message": "kaos polos harganya berapa?"
+}
+```
 
-Ini dikirim sebagai `systemInstruction` ke Gemini, terpisah dari pesan user — jadi
-walaupun user nulis "abaikan instruksi sebelumnya", instruksi sistem tetep dominan
-(walau tetep gak 100% bulletproof, makanya ditambah validasi di kode juga).
+Bot akan memberikan jawaban berdasarkan data produk yang tersedia di database.
 
-Selain di level prompt, ada juga validasi di `middlewares/validateChatInput.middleware.js`
-(cek panjang pesan, dsb) — konsepnya **defense in depth**: jangan cuma andelin satu
-lapis pertahanan (prompt doang), tapi dilapis dari beberapa sisi.
+## Guardrail
 
-## Soal keamanan API key
+Bot dibatasi agar hanya menjawab pertanyaan yang berhubungan dengan produk.
 
-- `GEMINI_API_KEY` cuma ada di `.env`, dibaca lewat `config/gemini.js`, **tidak pernah**
-  dikirim ke client/response manapun.
-- `.env` masuk `.gitignore`, jangan pernah ke-commit ke git.
-- Kalo API key ini bocor, orang lain bisa pake kuota Gemini kamu buat request mereka
-  sendiri — beda kasus sama kebocoran data biasa, ini soal *cost & abuse*.
+Contoh pertanyaan di luar konteks:
 
-## Ide pengembangan lanjut (opsional buat materi lanjutan)
-- Rate limiting per IP/session biar gak di-spam (`express-rate-limit`)
-- Simpan history chat per session biar bot punya konteks percakapan (multi-turn)
-- Logging semua pertanyaan yang ditolak bot, buat monitoring percobaan misuse
+```json
+{
+  "message": "buatkan saya kode HTML untuk landing page"
+}
+```
+
+Bot akan menolak permintaan tersebut dan mengarahkan pengguna kembali ke topik produk.
+
+Guardrail diterapkan melalui `services/gemini.service.js` dengan **system instruction** yang mengatur:
+
+* Peran bot sebagai Customer Service
+* Data produk yang boleh digunakan
+* Larangan memberikan informasi di luar data produk
+* Larangan membuat kode atau HTML
+* Pencegahan prompt injection
+* Grounding jawaban berdasarkan database
+
+Selain guardrail pada prompt, validasi juga dilakukan melalui middleware sebagai penerapan **defense in depth**.
+
+## Hasil Pengujian
+
+Pengujian dilakukan menggunakan **Thunder Client**.
+
+Fitur yang telah berhasil diuji:
+
+* Login admin dengan status `200 OK`
+* Menampilkan data produk
+* Chat mengenai produk menggunakan Gemini
+* Menampilkan harga dan stok berdasarkan database
+* Guardrail menolak pertanyaan di luar konteks produk
+
+Dokumentasi lengkap kontrak API dan screenshot hasil pengujian dapat dilihat pada:
+
+```text
+Tugas.md
+```
+
+## Kesimpulan
+
+Project **CS Bot API** berhasil mengintegrasikan **Generative AI Gemini** dengan REST API menggunakan **Express.js**, **Sequelize**, dan **MySQL**.
+
+Bot dapat memberikan informasi berdasarkan data produk yang tersedia di database serta menerapkan **prompt engineering**, **grounding**, **guardrail**, dan **defense in depth** agar jawaban tetap sesuai dengan konteks Customer Service.
