@@ -8,7 +8,7 @@ const sequelize = new Sequelize(
   {
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
-    dialect: 'postgres', // ganti 'mysql' kalo pake Laragon (jangan lupa install driver mysql2)
+    dialect: 'mysql',
     logging: false,
   }
 );
